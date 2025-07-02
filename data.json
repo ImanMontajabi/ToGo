@@ -1,10 +1,16 @@
 {
   "tasks": [
     {
-      "title": "Learn Go",
-      "description": "Writing an ToDo-App for summer",
+      "title": "Joojeh",
+      "description": "biroon",
+      "isDone": false,
+      "timeInMinute": 60
+    },
+    {
+      "title": "iman",
+      "description": "mashgh",
       "isDone": true,
-      "timeInMinute": 120
+      "timeInMinute": 25
     }
   ]
 }

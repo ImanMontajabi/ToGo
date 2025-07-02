@@ -61,10 +61,18 @@ func (tl *taskList) loadFromFile(fileName string) error {
 }
 
 func (tl *taskList) remove(index int) {
-	if index < 0 && index >= len(tl.Tasks) {
+	if index < 0 || index >= len(tl.Tasks) {
 		log.Fatalf("Index out of range")
 	}
 	tl.Tasks = append(tl.Tasks[:index], tl.Tasks[index+1:]...)
+}
+
+func (tl *taskList) listPending() {
+	for i, v := range tl.Tasks {
+		if !v.IsDone {
+			fmt.Printf("%d. [ ] %s | %s | %d\n", i+1, v.Title, v.Description, v.TimeInMinute)
+		}
+	}
 }
 
 func main() {
@@ -124,6 +132,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+	case "pending":
+		todoList.listPending()
 	case "help":
 		help()
 	}
@@ -135,4 +145,5 @@ func help() {
 	fmt.Println("  list")
 	fmt.Println("  done [index]")
 	fmt.Println("  remove [index]")
+	fmt.Println("  pending      → list only not-done tasks")
 }
