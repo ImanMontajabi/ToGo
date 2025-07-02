@@ -59,5 +59,35 @@ func (tl *taskList) loadFromFile(fileName string) error {
 }
 
 func main() {
+	ToGoList := taskList{Tasks: []task{}}
+
+	//DataErr := ToGoList.loadFromFile("data.json")
+	//if DataErr != nil {
+	//	fmt.Printf("Loading file error: %s", DataErr)
+	//}
+
+	Task1 := task{
+		Title:        "Learn Go",
+		Description:  "Writing an ToDo-App for summer",
+		IsDone:       false,
+		TimeInMinute: 120,
+	}
+
+	Task2 := task{
+		Title:        "Learn AI",
+		Description:  "Writing an AI-APP",
+		IsDone:       true,
+		TimeInMinute: 90,
+	}
+
+	ToGoList.addTask(Task1)
+	ToGoList.addTask(Task2)
+
+	saveErr := ToGoList.saveToFile("data.json")
+	if saveErr != nil {
+		fmt.Printf("Saving file error: %s", saveErr)
+	}
+
+	ToGoList.listTasks()
 
 }
