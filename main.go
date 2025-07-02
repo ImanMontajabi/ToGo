@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 )
 
 type task struct {
@@ -33,7 +35,7 @@ func (tl *taskList) listTasks() {
 
 func (tl *taskList) markDone(index int) error {
 	if index < 0 || index >= len(tl.Tasks) {
-		return fmt.Errorf("Index out of bound!")
+		log.Fatal("Index out of range")
 	}
 	tl.Tasks[index].IsDone = true
 	return nil
@@ -58,36 +60,79 @@ func (tl *taskList) loadFromFile(fileName string) error {
 	return json.Unmarshal(data, tl)
 }
 
+func (tl *taskList) remove(index int) {
+	if index < 0 && index >= len(tl.Tasks) {
+		log.Fatalf("Index out of range")
+	}
+	tl.Tasks = append(tl.Tasks[:index], tl.Tasks[index+1:]...)
+}
+
 func main() {
-	ToGoList := taskList{Tasks: []task{}}
-
-	//DataErr := ToGoList.loadFromFile("data.json")
-	//if DataErr != nil {
-	//	fmt.Printf("Loading file error: %s", DataErr)
-	//}
-
-	Task1 := task{
-		Title:        "Learn Go",
-		Description:  "Writing an ToDo-App for summer",
-		IsDone:       false,
-		TimeInMinute: 120,
+	args := os.Args[1:]
+	if len(args) < 1 {
+		help()
+		return
 	}
 
-	Task2 := task{
-		Title:        "Learn AI",
-		Description:  "Writing an AI-APP",
-		IsDone:       true,
-		TimeInMinute: 90,
+	command := args[0]
+
+	todoList := taskList{}
+	_ = todoList.loadFromFile("data.json")
+
+	switch command {
+	case "add":
+		if len(args) != 4 {
+			log.Fatal("Not enough arguments")
+		}
+		time, err := strconv.Atoi(args[3])
+		if err != nil {
+			log.Fatalf("Failed to convert time-string to integer: %s", err)
+		}
+		todoList.addTask(task{Title: args[1], Description: args[2], IsDone: false, TimeInMinute: time})
+		err = todoList.saveToFile("data.json")
+		if err != nil {
+			log.Fatalf("Failed to save in file with error: %s", err)
+		}
+	case "list":
+		if len(args) != 1 {
+			log.Fatal("False arguments")
+		}
+		todoList.listTasks()
+	case "done":
+		if len(args) != 2 {
+			log.Fatal("False arguments")
+		}
+		index, err := strconv.Atoi(args[1])
+		if err != nil {
+			log.Fatalf("Failed to convert index-string to integer: %s", err)
+		}
+		err = todoList.markDone(index - 1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = todoList.saveToFile("data.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "remove":
+		index, err := strconv.Atoi(args[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+		todoList.remove(index - 1)
+		err = todoList.saveToFile("data.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "help":
+		help()
 	}
+}
 
-	ToGoList.addTask(Task1)
-	ToGoList.addTask(Task2)
-
-	saveErr := ToGoList.saveToFile("data.json")
-	if saveErr != nil {
-		fmt.Printf("Saving file error: %s", saveErr)
-	}
-
-	ToGoList.listTasks()
-
+func help() {
+	fmt.Println("Usage:")
+	fmt.Println("  add [title] [description] [time in minute]")
+	fmt.Println("  list")
+	fmt.Println("  done [index]")
+	fmt.Println("  remove [index]")
 }

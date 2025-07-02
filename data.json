@@ -3,14 +3,8 @@
     {
       "title": "Learn Go",
       "description": "Writing an ToDo-App for summer",
-      "isDone": false,
-      "timeInMinute": 120
-    },
-    {
-      "title": "Learn AI",
-      "description": "Writing an AI-APP",
       "isDone": true,
-      "timeInMinute": 90
+      "timeInMinute": 120
     }
   ]
 }
