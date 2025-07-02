@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
 
 type task struct {
 	Title        string `json:"title"`
@@ -33,4 +37,27 @@ func (tl *taskList) markDone(index int) error {
 	}
 	tl.Tasks[index].IsDone = true
 	return nil
+}
+
+func (tl *taskList) saveToFile(fileName string) error {
+	data, err := json.MarshalIndent(tl, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(fileName, data, 0644)
+}
+
+func (tl *taskList) loadFromFile(fileName string) error {
+	data, err := os.ReadFile(fileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return json.Unmarshal(data, tl)
+}
+
+func main() {
+
 }
