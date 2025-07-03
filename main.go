@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 type task struct {
@@ -35,7 +35,7 @@ func (tl *taskList) listTasks() {
 
 func (tl *taskList) markDone(index int) error {
 	if index < 0 || index >= len(tl.Tasks) {
-		log.Fatal("Index out of range")
+		return fmt.Errorf("index out of range")
 	}
 	tl.Tasks[index].IsDone = true
 	return nil
@@ -60,11 +60,12 @@ func (tl *taskList) loadFromFile(fileName string) error {
 	return json.Unmarshal(data, tl)
 }
 
-func (tl *taskList) remove(index int) {
+func (tl *taskList) remove(index int) error {
 	if index < 0 || index >= len(tl.Tasks) {
-		log.Fatalf("Index out of range")
+		return fmt.Errorf("Index out of range")
 	}
 	tl.Tasks = append(tl.Tasks[:index], tl.Tasks[index+1:]...)
+	return nil
 }
 
 func (tl *taskList) listPending() {
@@ -73,6 +74,21 @@ func (tl *taskList) listPending() {
 			fmt.Printf("%d. [ ] %s | %s | %d\n", i+1, v.Title, v.Description, v.TimeInMinute)
 		}
 	}
+}
+
+func (tl *taskList) runTaskTimer(minutes int) bool {
+	total := minutes
+	minute := 0
+	for i := 0; i <= total*60; i++ {
+		percent := float64(i) / float64(total*60)
+		progressBar := renderProgressBar(percent, 20)
+		if i%60 == 0 && i != 0 {
+			minute += 1
+		}
+		fmt.Printf("\rProgress: %s %d%% (%d/%d min)", progressBar, int(percent*100), minute, total)
+		time.Sleep(time.Second)
+	}
+	return true
 }
 
 func main() {
@@ -90,50 +106,84 @@ func main() {
 	switch command {
 	case "add":
 		if len(args) != 4 {
-			log.Fatal("Not enough arguments")
+			fmt.Printf("False arguments")
+			help()
+			os.Exit(1)
 		}
-		time, err := strconv.Atoi(args[3])
+		timeInMinute, err := strconv.Atoi(args[3])
 		if err != nil {
-			log.Fatalf("Failed to convert time-string to integer: %s", err)
+			fmt.Printf("Failed to convert time-string to integer: %s", err)
+			os.Exit(1)
 		}
-		todoList.addTask(task{Title: args[1], Description: args[2], IsDone: false, TimeInMinute: time})
+		todoList.addTask(task{Title: args[1], Description: args[2], IsDone: false, TimeInMinute: timeInMinute})
 		err = todoList.saveToFile("data.json")
 		if err != nil {
-			log.Fatalf("Failed to save in file with error: %s", err)
+			fmt.Printf("Failed to save in file with error: %s", err)
+			os.Exit(1)
 		}
 	case "list":
 		if len(args) != 1 {
-			log.Fatal("False arguments")
+			fmt.Printf("False arguments")
+			help()
+			os.Exit(1)
 		}
 		todoList.listTasks()
 	case "done":
 		if len(args) != 2 {
-			log.Fatal("False arguments")
+			fmt.Printf("False arguments")
+			help()
+			os.Exit(1)
 		}
 		index, err := strconv.Atoi(args[1])
 		if err != nil {
-			log.Fatalf("Failed to convert index-string to integer: %s", err)
+			fmt.Printf("Failed to convert index-string to integer: %s", err)
+			os.Exit(1)
 		}
 		err = todoList.markDone(index - 1)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("error in markdone: %s", err)
+			os.Exit(1)
 		}
 		err = todoList.saveToFile("data.json")
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("error in save to file: %s", err)
+			os.Exit(1)
 		}
 	case "remove":
 		index, err := strconv.Atoi(args[1])
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("Failed to convert index-string to integer: %s", err)
+			os.Exit(1)
 		}
 		todoList.remove(index - 1)
 		err = todoList.saveToFile("data.json")
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("error in save to file: %s", err)
+			os.Exit(1)
 		}
 	case "pending":
 		todoList.listPending()
+	case "start":
+		if len(args) != 2 {
+			fmt.Printf("False arguments")
+			help()
+			os.Exit(1)
+		}
+		index, err := strconv.Atoi(args[1])
+		if err != nil {
+			fmt.Printf("Failed to convert index-string to integer: %s", err)
+			os.Exit(1)
+		}
+		timeInMinute := todoList.Tasks[index-1].TimeInMinute
+		isDone := todoList.runTaskTimer(timeInMinute)
+		if isDone {
+			todoList.Tasks[index-1].IsDone = true
+			err = todoList.saveToFile("data.json")
+			if err != nil {
+				fmt.Printf("failed to save in file: %s", err)
+				os.Exit(1)
+			}
+		}
 	case "help":
 		help()
 	}
@@ -146,4 +196,18 @@ func help() {
 	fmt.Println("  done [index]")
 	fmt.Println("  remove [index]")
 	fmt.Println("  pending      → list only not-done tasks")
+}
+
+func renderProgressBar(percent float64, width int) string {
+	done := int(percent * float64(width))
+	remaining := width - done
+	return fmt.Sprintf("[%s%s]", stringRepeat("#", done), stringRepeat(".", remaining))
+}
+
+func stringRepeat(s string, count int) string {
+	result := ""
+	for i := 0; i < count; i++ {
+		result += s
+	}
+	return result
 }

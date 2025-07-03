@@ -1,1 +1,17 @@
+# Ignore the compiled Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Ignore workspace-specific or OS-specific files
+.DS_Store
 .idea/
+.vscode/
+*.swp
+
+# Ignore your local data file
+data.json
